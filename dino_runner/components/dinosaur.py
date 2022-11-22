@@ -1,8 +1,6 @@
 import pygame
-import time
 from dino_runner.utils.constants import RUNNING, JUMPING, DUCKING
 
-TIME = time.sleep(3)
 X_POS = 80
 Y_POS = 310
 Y_POS_DUCK = Y_POS + 30
@@ -62,7 +60,7 @@ class Dinosaur:
                 self.dino_jump = False
                 self.dino_duck = True
                 self.dino_run = False
-        elif not (self.dino_jump or user_input[pygame.K_DOWN]):
+        elif not self.dino_jump:
             self.dino_jump = False
             self.dino_duck = False
             self.dino_run = True
