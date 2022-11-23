@@ -3,7 +3,6 @@ import random
 
 from dino_runner.utils.constants import SMALL_CACTUS, LARGE_CACTUS, BIRD
 from dino_runner.components.obstacles.cactus import Cactus
-from dino_runner.components.obstacles.cactus_large import CactusLarge
 from dino_runner.components.obstacles.bird import Birds
 
 
@@ -13,11 +12,10 @@ class ObstacleManager:
         self.obstacles = []
     
     def choice_obstacle(self):
-        self.type = random.randint(0, 2)
+        self.type = random.randint(0, 1)
         self.obstacle = [
-            Cactus(SMALL_CACTUS),
-            CactusLarge(LARGE_CACTUS),
-            Birds(BIRD),
+            Cactus(),
+            Birds(),
         ]
         self.obstacles.append(self.obstacle[self.type])
 
