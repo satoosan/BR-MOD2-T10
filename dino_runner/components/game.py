@@ -29,7 +29,6 @@ class Game:
         while self.running:
             if not self.playing:
                 self.show_menu()
-        
         pygame.display.quit()
         pygame.quit()
 
@@ -37,6 +36,8 @@ class Game:
         # Game loop: events - update - draw
         self.playing = True
         self.obstacle_manager.reset_obstacles()
+        self.score = 0
+        self.game_speed = 20
         while self.playing:
             self.events()
             self.update()
@@ -47,7 +48,7 @@ class Game:
             if event.type == pygame.QUIT:
                 self.playing = False
                 self.running= False
-
+                
     def update(self):
         user_input = pygame.key.get_pressed() # Pega a tecla pressionada
         self.player.update(user_input)
@@ -58,14 +59,14 @@ class Game:
         self.score += 1
         if self.score % 100 == 0:
             self.game_speed += 5
-        
+
     def draw(self):
         self.clock.tick(FPS) # Ele calculará quantos milissegundos se passaram desde a chamada anterior
         self.screen.fill((255, 255, 255)) # Preencher a tela
         self.draw_background()
         self.player.draw(self.screen)
         self.obstacle_manager.draw(self.screen)
-        self.draw_score()
+        self.draw_message(f"SCORE: {self.score}", 21,  1000,  50)
         pygame.display.update()
         pygame.display.flip() # Atualize a superfície de exibição completa para a tela
 
@@ -78,11 +79,11 @@ class Game:
             self.x_pos_bg = 0
         self.x_pos_bg -= self.game_speed
     
-    def draw_score(self):
-        font = pygame.font.Font(FONT_STYLE, 22)
-        text = font.render(f"Score: {self.score}", True, (0, 0, 0))
+    def draw_message(self, msg, size, width, height):
+        font = pygame.font.Font(FONT_STYLE, size)
+        text = font.render(msg, True, (0, 0, 0))
         text_rect = text.get_rect()
-        text_rect.center = (1000, 50)
+        text_rect.center = (width, height)
         self.screen.blit(text, text_rect)
 
     def handle_events_menu(self):
@@ -94,22 +95,18 @@ class Game:
                 self.run()
 
     def show_menu(self):
+        self.aux = True
         self.screen.fill((255, 255, 255))
         half_screen_height = SCREEN_HEIGHT // 2
         half_screen_width = SCREEN_WIDTH // 2
 
         if self.death_count == 0:
-            font = pygame.font.Font(FONT_STYLE, 22)
-            text = font.render("Press any key to start", True, (0, 0, 0))
-            text_rect = text.get_rect()
-            text_rect.center = (half_screen_width, half_screen_height)
-            self.screen.blit(text, text_rect)
+            self.draw_message("Press any key to start", 22, half_screen_width, half_screen_height)
         else:
-            # "Press any key to restart"
-            # Mostrar Score atingido e Death_count
-            # resetar game_speed e score
-            # método reutilizável para desenhar os textos
+            self.draw_message("Press any key to start", 22, half_screen_width+20, half_screen_height)
+            self.draw_message(f"SCORE TOTAL: {self.score}", 22, half_screen_width+20, half_screen_height+50)
+            self.draw_message(f"DEATH TOTAL: {self.death_count}", 22, half_screen_width+20, half_screen_height+80)
             self.screen.blit(ICON, (half_screen_width - 20, half_screen_height - 140))
-
+            
         pygame.display.update()
         self.handle_events_menu()

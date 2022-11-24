@@ -30,7 +30,7 @@ class ObstacleManager:
                 game.playing = False
                 game.death_count += 1
                 break
-    
+
     def reset_obstacles(self):
         self.obstacles = []
 
