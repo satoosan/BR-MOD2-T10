@@ -1,8 +1,10 @@
 import pygame
 
-from dino_runner.utils.constants import BG, ICON, RUNNING, SCREEN_HEIGHT, SCREEN_WIDTH, TITLE, FPS, DEATH_ICON, KEYS_ICON, AWARD_ICON
+from dino_runner.utils.constants import BG, ICON, RUNNING, SCREEN_HEIGHT, SCREEN_WIDTH, TITLE, FPS, DEFAULT_TYPE,DEATH_ICON, KEYS_ICON, AWARD_ICON
 from dino_runner.components.dinosaur import Dinosaur
 from dino_runner.components.obstacles.obstacle_manager import ObstacleManager
+from dino_runner.components.power_ups.power_up_manager import PowerUpManager
+
 
 FONT_STYLE = "freesansbold.ttf"
 
@@ -24,12 +26,14 @@ class Game:
         self.y_pos_bg = 380
         self.player = Dinosaur()
         self.obstacle_manager = ObstacleManager()
+        self.power_up_manager = PowerUpManager()
 
     def execute(self):
         self.running = True
         while self.running:
             if not self.playing:
                 self.show_menu()
+
         pygame.display.quit()
         pygame.quit()
 
@@ -37,6 +41,7 @@ class Game:
         # Game loop: events - update - draw
         self.playing = True
         self.obstacle_manager.reset_obstacles()
+        self.power_up_manager.reset_power_ups()
         self.score_now = 0
         self.game_speed = 20
         while self.playing:
@@ -55,6 +60,7 @@ class Game:
         self.player.update(user_input)
         self.obstacle_manager.update(self)
         self.update_score()
+        self.power_up_manager.update(self.score_now, self.game_speed, self.player)
 
     def update_score(self):
         
@@ -72,6 +78,8 @@ class Game:
         self.player.draw(self.screen)
         self.obstacle_manager.draw(self.screen)
         self.draw_message(f"SCORE: {self.score_now}", 21,  1000,  50, (0, 0, 0))
+        self.draw_power_up_time()
+        self.power_up_manager.draw(self.screen)
         pygame.display.update()
         pygame.display.flip() # Atualize a superfície de exibição completa para a tela
 
@@ -83,6 +91,20 @@ class Game:
             self.screen.blit(BG, (image_width + self.x_pos_bg, self.y_pos_bg))
             self.x_pos_bg = 0
         self.x_pos_bg -= self.game_speed
+    
+    def draw_power_up_time(self):
+        if self.player.has_power_up:
+            time_to_show = round((self.player.power_up_time - pygame.time.get_ticks()) / 1000, 2)
+            if time_to_show >= 0:
+                self.draw_message(
+                    f"{self.player.type.capitalize()} enabled for {time_to_show} seconds",
+                    30,
+                    500,
+                    40,
+                    (0, 0, 0))
+            else:
+                self.player.has_power_up = False
+                self.player.type = DEFAULT_TYPE
     
     def draw_message(self, msg, size, width, height, color):
         font = pygame.font.Font(FONT_STYLE, size)
