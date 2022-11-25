@@ -1,13 +1,18 @@
 import pygame
+import random
 
-from dino_runner.utils.constants import BG, ICON, RUNNING, SCREEN_HEIGHT, SCREEN_WIDTH, TITLE, FPS, DEFAULT_TYPE,DEATH_ICON, KEYS_ICON, AWARD_ICON
+from dino_runner.utils.constants import *
 from dino_runner.components.dinosaur import Dinosaur
 from dino_runner.components.obstacles.obstacle_manager import ObstacleManager
+from dino_runner.components.obstacles.cloud import Cloud
 from dino_runner.components.power_ups.power_up_manager import PowerUpManager
 
 
 FONT_STYLE = "freesansbold.ttf"
 
+
+# CONSTANTS
+SCORE = 0
 
 class Game:
     def __init__(self):
@@ -18,13 +23,17 @@ class Game:
         self.clock = pygame.time.Clock()
         self.playing = False
         self.running = False
-        self.score_now = 0
-        self.best_score = 0
+
+        self.score_now = SCORE
+        self.best_score = SCORE
         self.death_count = 0
-        self.game_speed = 20
+        self.game_speed = GAME_SPEED
+
         self.x_pos_bg = 0
         self.y_pos_bg = 380
+
         self.player = Dinosaur()
+        self.cloud = Cloud()
         self.obstacle_manager = ObstacleManager()
         self.power_up_manager = PowerUpManager()
 
@@ -41,9 +50,9 @@ class Game:
         # Game loop: events - update - draw
         self.playing = True
         self.obstacle_manager.reset_obstacles()
+        self.score_now = SCORE
+        self.game_speed = GAME_SPEED
         self.power_up_manager.reset_power_ups()
-        self.score_now = 0
-        self.game_speed = 20
         while self.playing:
             self.events()
             self.update()
@@ -58,7 +67,9 @@ class Game:
     def update(self):
         user_input = pygame.key.get_pressed() # Pega a tecla pressionada
         self.player.update(user_input)
+        self.cloud.update()
         self.obstacle_manager.update(self)
+        
         self.update_score()
         self.power_up_manager.update(self.score_now, self.game_speed, self.player)
 
@@ -66,15 +77,16 @@ class Game:
         
         self.score_now += 1
         if self.score_now % 100 == 0:
-            self.game_speed += 5
+            self.game_speed += 2
 
         if self.score_now >= self.best_score:
-            self.best_score = self.score_now
+            self.best_score = self.score_now - 1
 
     def draw(self):
         self.clock.tick(FPS) # Ele calculará quantos milissegundos se passaram desde a chamada anterior
         self.screen.fill((255, 255, 255)) # Preencher a tela
         self.draw_background()
+        self.cloud.draw(self.screen)
         self.player.draw(self.screen)
         self.obstacle_manager.draw(self.screen)
         self.draw_message(f"SCORE: {self.score_now}", 21,  1000,  50, (0, 0, 0))
@@ -99,8 +111,8 @@ class Game:
                 self.draw_message(
                     f"{self.player.type.capitalize()} enabled for {time_to_show} seconds",
                     30,
-                    500,
-                    40,
+                    SCREEN_WIDTH // 2,
+                    (SCREEN_HEIGHT // 2) + 150,
                     (0, 0, 0))
             else:
                 self.player.has_power_up = False
@@ -112,6 +124,29 @@ class Game:
         text_rect = text.get_rect()
         text_rect.center = (width, height)
         self.screen.blit(text, text_rect)
+
+    def draw_home_screen(self):
+        self.draw_message("Welcome to the game!", 50, self.half_screen_width, self.half_screen_height-100, (0, 0, 0))
+        self.draw_message("Press any key to start", 25, self.half_screen_width, self.half_screen_height-30, (0, 0, 0))
+        self.draw_message("Developed by Guilherme Kimura", 15, self.half_screen_width+380, self.half_screen_height+280, (128, 128, 128))
+        self.draw_message("How to play", 18, self.half_screen_width+395, self.half_screen_height+120,(0, 0, 0))
+        self.draw_icon(TUTORIAL, self.half_screen_width-150, self.half_screen_height)
+        self.draw_icon(KEYS_ICON, self.half_screen_width+345, self.half_screen_height+150)
+        self.draw_icon(FEET, self.half_screen_width-60, self.half_screen_height-240)
+    
+    def draw_end_screen(self):
+        self.draw_message("Press any key to start", 20, self.half_screen_width+20, self.half_screen_height+60, (128, 128, 128))
+        self.draw_message(f"SCORE TOTAL: {self.score_now-1}", 18, self.half_screen_width+390, self.half_screen_height-225, (128, 128, 128))
+        self.draw_message(f"BEST SCORE: {self.best_score}", 22, self.half_screen_width+400, self.half_screen_height-200, (0, 0, 0))
+        self.draw_message(f"DEATH TOTAL: {self.death_count}", 18, self.half_screen_width+385, self.half_screen_height-160, (0, 0, 0))
+        self.draw_message("How to play", 18, self.half_screen_width+395, self.half_screen_height+120,(0, 0, 0))
+        
+        self.draw_icon(GAME_OVER, self.half_screen_width-160, self.half_screen_height)
+        self.draw_icon(RESET, self.half_screen_width-20, self.half_screen_height+80)
+        self.draw_icon(ICON, self.half_screen_width-20, self.half_screen_height-140)
+        self.draw_icon(DEATH_ICON, self.half_screen_width+280, self.half_screen_height-175)
+        self.draw_icon(KEYS_ICON, self.half_screen_width+345, self.half_screen_height+150)
+        self.draw_icon(AWARD_ICON, self.half_screen_width+280, self.half_screen_height-215)
     
     def draw_icon(self, icon_image, icon_width, icon_height):
         self.screen.blit(icon_image, (icon_width, icon_height))
@@ -125,27 +160,14 @@ class Game:
                 self.run()
 
     def show_menu(self):
-        self.aux = True
         self.screen.fill((255, 255, 255))
-        half_screen_height = SCREEN_HEIGHT // 2
-        half_screen_width = SCREEN_WIDTH // 2
-
+        self.half_screen_height = SCREEN_HEIGHT // 2
+        self.half_screen_width = SCREEN_WIDTH // 2
+        
         if self.death_count == 0:
-            self.draw_message("Welcome to the game!", 50, half_screen_width, half_screen_height-100, (0, 0, 0))
-            self.draw_message("Press any key to start", 25, half_screen_width, half_screen_height, (0, 0, 0))
-            self.draw_icon(KEYS_ICON, half_screen_width-195, half_screen_height)
-            self.draw_message("Developed by Guilherme Kimura", 15, half_screen_width+380, half_screen_height+280, (128, 128, 128))
+            self.draw_home_screen()
         else:
-            self.draw_message("GAME OVER", 50, half_screen_width+20, half_screen_height, (255, 0, 0))
-            self.draw_message("Press any key to start", 20, half_screen_width+20, half_screen_height+75, (128, 128, 128))
-            self.draw_message(f"SCORE TOTAL: {self.score_now}", 18, half_screen_width+390, half_screen_height-225, (128, 128, 128))
-            self.draw_message(f"BEST SCORE: {self.best_score}", 22, half_screen_width+400, half_screen_height-200, (0, 0, 0))
-            self.draw_message(f"DEATH TOTAL: {self.death_count}", 18, half_screen_width+385, half_screen_height-160, (0, 0, 0))
-            
-            self.draw_icon(ICON, half_screen_width-20, half_screen_height-140)
-            self.draw_icon(DEATH_ICON, half_screen_width+280, half_screen_height-175)
-            self.draw_icon(KEYS_ICON, half_screen_width-170, half_screen_height+70)
-            self.draw_icon(AWARD_ICON, half_screen_width+285, half_screen_height-210)
+            self.draw_end_screen()
             
         pygame.display.update()
         self.handle_events_menu()

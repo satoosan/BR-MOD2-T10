@@ -3,7 +3,6 @@ import random
 
 from dino_runner.components.obstacles.cactus import Cactus
 from dino_runner.components.obstacles.bird import Birds
-from dino_runner.components.power_ups.power_up_manager import PowerUpManager
 
 
 class ObstacleManager:
@@ -30,8 +29,9 @@ class ObstacleManager:
                     game.playing = False
                     game.death_count += 1
                     break
-                else:                    
-                    self.obstacles.remove(obstacle)
+                else:                   
+                    if game.player.hammer == True or game.player.nuclear == True:
+                        self.obstacles.remove(obstacle)
 
     def reset_obstacles(self):
         self.obstacles = []
@@ -39,4 +39,3 @@ class ObstacleManager:
     def draw(self, screen):
         for obstacle in self.obstacles:
             obstacle.draw(screen)
-            
